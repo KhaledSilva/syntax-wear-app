@@ -1,7 +1,7 @@
 interface ButtonProps {
     children: React.ReactNode;
     variant?: "primary" | "secondary";
-    size: "sm" | "md" | "lg";
+    size?: "sm" | "md" | "lg";
 }
 
 export const Button = ({ children, variant = "primary", size = "md" }: ButtonProps) => {
