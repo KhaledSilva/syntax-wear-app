@@ -4,6 +4,8 @@ import ModelFemale from "@/assets/images/galeria-modelo.jpg";
 import ShoeColor from "@/assets/images/galeria-tenis-colorido.jpg";
 import ShoeWhiteBlack from "@/assets/images/galeria-tenis-branco-e-preto.jpg";
 import ShoeGray from "@/assets/images/galeria-tenis-cinza.jpg";
+import { Overlay } from "../Overlay";
+import { Button } from "../Button";
 
 export const Gallery = () => {
     return (
@@ -13,26 +15,10 @@ export const Gallery = () => {
                     <img src={ModelMale} alt="Modelo masculino" className="h-full w-full object-cover" />
                     <div className="absolute inset-0 bg-black/30" />
                     <div className="absolute inset-0 flex items-center justify-center px-6 md:px-12">
-                        <div className="flex w-full max-w-[40rem] flex-col items-center justify-center text-center gap-4 md:gap-5 px-6">
-                            <span className="text-[10px] md:text-xs uppercase tracking-[0.25em] md:tracking-[0.35em] text-white/90">
-                                Krypton One
-                            </span>
-
-                            <h2 className="text-2xl md:text-3xl leading-tight md:leading-[1.05] text-white max-w-sm md:max-w-none">
-                                Estilo urbano com atitude
-                            </h2>
-
-                            <div className="flex w-full  items-center gap-3 sm:flex-row sm:justify-center">
-                                <button className="w-full max-w-[220px] sm:w-auto sm:min-w-[9rem] rounded-full border border-white px-0.5 md:px-8 py-2 md:py-3 text-sm text-white transition hover:bg-white/10 hover:font-semibold cursor-pointer">
-                                    Feminino
-                                </button>
-
-                                <button className="w-full max-w-[220px] sm:w-auto sm:min-w-[9rem] rounded-full border border-white px-0.5 md:px-8 py-2.5 md:py-3 text-sm text-white transition hover:bg-white/10 hover:font-semibold cursor-pointer">
-                                    Masculino
-                                </button>
-                            </div>
-
-                        </div>
+                        <Overlay title="Kripton One" subtitle="Estilo urbano com atitude" classname="inset-0 justify-center">
+                            <Button variant="secondary">Feminino</Button>
+                            <Button variant="secondary">Masculino</Button>
+                        </Overlay>
                     </div>
                 </div>
 
