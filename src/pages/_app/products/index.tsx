@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { ProductList } from "../../../components/ProductList"
+import { products } from "../../../mocks/products"
 
 export const Route = createFileRoute("/_app/products/")({
   component: RouteComponent,
@@ -6,14 +8,12 @@ export const Route = createFileRoute("/_app/products/")({
 
 function RouteComponent() {
   return (
-    <div className="container">
-        <h1 className="text-back">OLÁ</h1>
+    <div className="container pt-44 md:pt-54 pb-10 md:px-10 mb-10 text-black bg-surface">
+      <h1 className="text-3xl text-center mb-3">Lista de produtos</h1>
 
-        <p className="text-black">Lorem, ipsum dolor sit amet consectetur adipisicing elit. Enim fugiat quaerat quia soluta eum adipisci natus iusto dolores illum labore. Fuga quos quam omnis veritatis soluta maiores placeat repellat enim.</p>
-        <p className="text-black">Lorem, ipsum dolor sit amet consectetur adipisicing elit. Enim fugiat quaerat quia soluta eum adipisci natus iusto dolores illum labore. Fuga quos quam omnis veritatis soluta maiores placeat repellat enim.</p>
-        <p className="text-black">Lorem, ipsum dolor sit amet consectetur adipisicing elit. Enim fugiat quaerat quia soluta eum adipisci natus iusto dolores illum labore. Fuga quos quam omnis veritatis soluta maiores placeat repellat enim.</p>
-        <p className="text-black">Lorem, ipsum dolor sit amet consectetur adipisicing elit. Enim fugiat quaerat quia soluta eum adipisci natus iusto dolores illum labore. Fuga quos quam omnis veritatis soluta maiores placeat repellat enim.</p>
-        <p className="text-black">Lorem, ipsum dolor sit amet consectetur adipisicing elit. Enim fugiat quaerat quia soluta eum adipisci natus iusto dolores illum labore. Fuga quos quam omnis veritatis soluta maiores placeat repellat enim.</p>
+      <h2 className="text-center mb-10 p-4">Conforto excepcional para suas aventuras do dia-a-dia</h2>
+
+      <ProductList products={products} />
     </div>
   )
 }

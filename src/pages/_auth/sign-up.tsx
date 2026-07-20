@@ -21,7 +21,7 @@ function RouteComponent() {
           <span className="text-sm font-medium text-black">Continuar com o Google</span>
         </button>
 
-        <p className="text-sm text-gray-600 mt-6 text-center">Já tem uma conta?{" "}
+        <p className="text-sm text-gray-600 mt-6 text-center">Já tem uma conta?
           <a href="/sign-in" className="text-[#5433eb] hover:underline">Entrar</a>
         </p>
       </div>
