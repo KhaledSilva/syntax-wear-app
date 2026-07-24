@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { Product } from "../Interfaces/product"
 import { CartContext } from "./CartContext"
 
@@ -10,12 +10,19 @@ export interface ProductCart extends Product {
     quantity: number
 }
 
-export const CartProvider = ({ children }: CartProviderProps) => {
+const localStorageKey = "@SyntaxWear:cart"
 
-    const [cart, setCart] = useState<ProductCart[]>([])
+export const CartProvider = ({ children }: CartProviderProps) => {
+    const [cart, setCart] = useState<ProductCart[]>(() => {
+        const cartFromLocalStore = localStorage.getItem(localStorageKey)
+        return cartFromLocalStore !== null ? JSON.parse(cartFromLocalStore) : []
+    })
+
+    useEffect(() => {
+        localStorage.setItem(localStorageKey, JSON.stringify(cart))
+    }, [cart])
 
     function addToCart(product: Product): void {
-
         const productExistsInCart = cart.find((itemIncart) => itemIncart.id === product.id)
 
         let newCart
@@ -54,7 +61,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
         if (!productExistsInCart) return
 
-        const newCart = cart.map((itemInCart) => 
+        const newCart = cart.map((itemInCart) =>
             itemInCart.id === product.id
                 ? { ...itemInCart, quantity: newQuantity }
                 : itemInCart
@@ -64,13 +71,13 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     }
 
     return (
-    <CartContext.Provider value={{
-        cart,
-        addToCart,
-        removeFromCart,
-        incrementInCart,
-        decrementInCart
-    }}>{children}
-    </CartContext.Provider>
+        <CartContext.Provider value={{
+            cart,
+            addToCart,
+            removeFromCart,
+            incrementInCart,
+            decrementInCart
+        }}>{children}
+        </CartContext.Provider>
     )
 }
