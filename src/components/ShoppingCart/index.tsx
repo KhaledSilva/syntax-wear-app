@@ -7,8 +7,6 @@ export const ShoppingCart = () => {
     const [cartIsOpen, setCartIsOpen] = useState<boolean>(false)
     const { cart, removeFromCart, incrementInCart, decrementInCart } = useContext(CartContext)
 
-    console.log("item no carrinho", cart)
-
     return (
         <>
             <button className="relative cursor-pointer" onClick={() => setCartIsOpen(!cartIsOpen)}>
