@@ -4,6 +4,9 @@ import { products } from "../../../../mocks/products";
 
 export const Route = createFileRoute("/_app/products/category/$category")({
   component: RouteComponent,
+  head: () => ({
+    meta: [{ title: "Produtos - SyntaxWear" }],
+  }),
 });
 
 function RouteComponent() {
@@ -24,8 +27,15 @@ function RouteComponent() {
 
       {filteredProducts.length === 0 ? (
         <>
-        <p className="text-center">Nenhum produto encontrado nessa categoria</p>
-        <Link to="/products" className="text-accent hover:text-accent-hover underline">Voltar para produtos</Link>
+          <p className="text-center">
+            Nenhum produto encontrado nessa categoria
+          </p>
+          <Link
+            to="/products"
+            className="text-accent hover:text-accent-hover underline"
+          >
+            Voltar para produtos
+          </Link>
         </>
       ) : (
         <ProductList products={filteredProducts} />
