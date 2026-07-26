@@ -18,8 +18,7 @@ const navLinks: NavLink[] = [
 ];
 
 export const Header = () => {
-
-  const [cartIsOpen, setCartIsOpen] = useState<boolean>(false)
+  const [cartIsOpen, setCartIsOpen] = useState<boolean>(false);
 
   return (
     <div className="relative">

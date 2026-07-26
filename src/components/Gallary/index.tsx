@@ -38,12 +38,17 @@ export const Gallery = () => {
               >
                 Feminino
               </Button>
-              <Button variant="secondary" onClick={() =>
+              <Button
+                variant="secondary"
+                onClick={() =>
                   router.navigate({
                     to: "/products/category/$category",
                     params: { category: "masculino" },
                   })
-                }>Masculino</Button>
+                }
+              >
+                Masculino
+              </Button>
             </Overlay>
           </div>
         </div>

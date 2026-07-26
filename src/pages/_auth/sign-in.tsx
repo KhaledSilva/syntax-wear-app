@@ -1,18 +1,15 @@
-import { createFileRoute, Link } from "@tanstack/react-router"
-import { LoginForm } from "../../components/LoginForm"
-import { Logo } from "../../components/Logo"
-import GoogleIcon from "@/assets/images/google-icon.png"
-import { Separator } from "../../components/Separator"
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { LoginForm } from "../../components/LoginForm";
+import { Logo } from "../../components/Logo";
+import GoogleIcon from "@/assets/images/google-icon.png";
+import { Separator } from "../../components/Separator";
 
-
-export const Route = createFileRoute('/_auth/sign-in')({
+export const Route = createFileRoute("/_auth/sign-in")({
   component: RouteComponent,
   head: () => ({
-    meta: [
-      { title: 'Login - SyntaxWear'}
-    ]
-  })
-})
+    meta: [{ title: "Login - SyntaxWear" }],
+  }),
+});
 
 function RouteComponent() {
   return (
@@ -27,7 +24,9 @@ function RouteComponent() {
 
           <button className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-md py-3 hover:bg-gray-50 transition cursor-pointer">
             <img src={GoogleIcon} alt="Ícone do Google" className="w-5 h-5" />
-            <span className="text-sm font-medium text-black">Continuar com o Google</span>
+            <span className="text-sm font-medium text-black">
+              Continuar com o Google
+            </span>
           </button>
 
           <Separator />
@@ -35,10 +34,13 @@ function RouteComponent() {
           <LoginForm />
 
           <p className="mt-3.5">
-            Ainda não possui conta? <Link to="/sign-up" className="ml-1 text-accent hover:underline">Cadastre-se</Link>
+            Ainda não possui conta?{" "}
+            <Link to="/sign-up" className="ml-1 text-accent hover:underline">
+              Cadastre-se
+            </Link>
           </p>
         </div>
       </div>
     </section>
-  )
+  );
 }
