@@ -1,0 +1,31 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { Hero } from "../../components/Hero";
+import { Categories } from "../../components/Categories";
+import { Gallery } from "../../components/Gallary";
+import { useEffect } from "react";
+import { getProducts } from "../../services/productService";
+
+export const Route = createFileRoute("/_app/")({
+  component: RouteComponent,
+});
+
+function RouteComponent() {
+
+  useEffect(() => {
+    loadMore();
+  }, [])
+
+  async function loadMore() {
+    const response = await getProducts({ page: 1 });
+
+    console.log(response)
+  }
+
+  return (
+    <main className="py-6">
+      <Hero />
+      <Categories />
+      <Gallery />
+    </main>
+  );
+}
