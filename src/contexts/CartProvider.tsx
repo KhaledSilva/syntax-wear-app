@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import type { Product } from "../interfaces/product";
+import type { CartProduct } from "../interfaces/product";
 import { CartContext } from "./CartContext";
 
 interface CartProviderProps {
   children: React.ReactNode;
 }
 
-export interface ProductCart extends Product {
+export interface ProductCart extends CartProduct {
   quantity: number;
 }
 
@@ -22,7 +22,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     localStorage.setItem(localStorageKey, JSON.stringify(cart));
   }, [cart]);
 
-  function addToCart(product: Product): void {
+  function addToCart(product: CartProduct): void {
     const productExistsInCart = cart.find(
       (itemIncart) => itemIncart.id === product.id,
     );

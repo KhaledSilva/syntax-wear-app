@@ -1,8 +1,11 @@
-export interface Product {
+export interface CartProduct {
     id: number
     name: string
     price: number
     images: string[]
+}
+
+export interface Product extends CartProduct {
     colors: string[]
     categoryId: number
     slug: string

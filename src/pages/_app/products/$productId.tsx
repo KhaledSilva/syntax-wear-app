@@ -98,7 +98,14 @@ function RouteComponent() {
 
           <button
             className="bg-black text-white rounded-md p-5 w-full cursor-pointer hover:bg-gray-800"
-            onClick={() => addToCart(filteredProduct)}
+            onClick={() =>
+              addToCart({
+                id: filteredProduct.id,
+                name: filteredProduct.name,
+                price: filteredProduct.price,
+                images: [filteredProduct.image],
+              })
+            }
           >
             Adicionar ao carrinho
           </button>

@@ -18,11 +18,19 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         to="/products/$productId"
         params={{ productId: String(product.id) }}
       >
-        <img
-          className="w-full max-h-[400px] object-cover rounded-md m-2"
-          src={product.images[0]}
-          alt={product.name}
-        />
+        {product.images?.[0] ? (
+          <img
+            className="w-full h-[400px] object-cover rounded-md"
+            src={product.images[0]}
+            alt={product.name}
+          />
+        ) : (
+          <div className="w-full h-[400px] bg-[#dedede] rounded-md flex items-center justify-center">
+            <span className="text-gray-500 text-4xl font-semibold">
+              {product.name.toLowerCase().replaceAll(" ", "-")} 1
+            </span>
+          </div>
+        )}
       </Link>
 
       <div className="text-black rounded-2xl p-4">
