@@ -49,17 +49,39 @@ export async function getProducts({
   return response.json();
 }
 
-export async function getProductByCategoryId(categoryId: number, paginationParams?: GetProductParams): Promise<ProductResponse> {
+export async function getProductByCategoryId(
+  categoryId: number,
+  paginationParams?: GetProductParams
+): Promise<ProductResponse> {
   const params = new URLSearchParams({
-    page: paginationParams?.page.toString() || "1",
-    limit: (paginationParams?.limit || DEFAULT_LIMIT).toString(),
-    categoryId: categoryId.toString()
+    page: (paginationParams?.page ?? 1).toString(),
+    limit: (paginationParams?.limit ?? DEFAULT_LIMIT).toString(),
+    categoryId: categoryId.toString(),
   });
 
-  const response = await fetch(`${API_BASE_URL}/products?${params.toString()}`);
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    throw new Error(
+      "Você precisa fazer login antes de buscar produtos."
+    );
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/products?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
   if (!response.ok) {
-    throw new Error(`Erro ao buscar produtos por categoria: ${response.statusText}`);
+    const errorMessage = await response.text();
+
+    throw new Error(
+      `Erro ao buscar produtos por categoria (${response.status}): ${errorMessage}`
+    );
   }
 
   return await response.json();

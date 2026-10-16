@@ -3,14 +3,12 @@ import type { Category } from "../interfaces/category";
 
 const API_BASE_URL = "http://localhost:3000";
 
-interface CategoryResponse {
-  data: Category[];
-}
-
-export async function getCategoryByName(name: string): Promise<Category> {
+export async function getCategoryByName(
+  name: string
+): Promise<Category> {
   const params = new URLSearchParams({
     page: "1",
-    limit: "1",
+    limit: "100",
     search: name,
   });
 
@@ -26,25 +24,29 @@ export async function getCategoryByName(name: string): Promise<Category> {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    },
+    }
   );
 
-  if (response.status === 401) {
-    throw new Error("Sua sessão expirou. Faça login novamente.");
-  }
-
   if (!response.ok) {
-    const errorMessage = await response.text();
     throw new Error(
-      `Erro ao buscar categoria (${response.status}): ${errorMessage}`,
+      `Erro ao buscar categoria (${response.status})`
     );
   }
 
-  const result: CategoryResponse = await response.json();
+  const result = await response.json();
 
-  if (!result.data || result.data.length === 0) {
+  const categories: Category[] = Array.isArray(result)
+    ? result
+    : result.data ?? [];
+
+  const category = categories.find(
+    (item) =>
+      item.slug.toLowerCase() === name.toLowerCase()
+  );
+
+  if (!category) {
     throw notFound();
   }
 
-  return result.data[0];
+  return category;
 }
