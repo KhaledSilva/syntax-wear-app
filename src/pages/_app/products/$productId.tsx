@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { products } from "../../../mocks/products";
 import { formatCurrency } from "../../../utils/format-currency";
-import { CartContext } from "../../../contexts/CartContext";
+import { CartContext } from "../../../contexts/CartContext/CartContext";
 import { useContext } from "react";
 import { CEPForm } from "../../../components/CEPForm";
 

@@ -24,22 +24,6 @@ export const Route = createFileRoute("/_app/products/category/$category")({
   ),
 });
 
-// export const Route = createFileRoute("/_app/products/category/$category")({
-//   loader: async ({ params }) => {
-//     console.log("LOADER EXECUTADO:", params.category);
-
-//     return {
-//       category: {
-//         id: 23,
-//         name: "Masculino",
-//         slug: "masculino",
-//       },
-//     };
-//   },
-
-//   component: RouteComponent,
-// });
-
 function RouteComponent() {
   const [products, setProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
