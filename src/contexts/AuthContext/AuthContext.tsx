@@ -32,7 +32,8 @@ export interface AuthContextType {
   // error: string | null;
   login: (credentials: Credentials) => Promise<void>;
   register: (data: RegisterInput) => Promise<void>;
-  logout: () => void;
+  logOut: () => Promise<void>;
+  signInWithGoogle: (credential: string) => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

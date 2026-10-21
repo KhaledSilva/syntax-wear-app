@@ -1,9 +1,11 @@
 import IconMenu from "@/assets/images/icone-menu.png";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { FaRegUserCircle } from "react-icons/fa";
 import type { NavLink } from "../Header";
 import { IoMdClose } from "react-icons/io";
+import { useAuth } from "../../contexts/AuthContext/AuthContext";
+import { PiSignOutLight } from "react-icons/pi";
 
 interface MenuMobileProps {
   navLinks: NavLink[];
@@ -11,6 +13,16 @@ interface MenuMobileProps {
 
 export const MenuMobile = ({ navLinks }: MenuMobileProps) => {
   const [menuIsOpen, setMenuIsOpen] = useState<boolean>(false);
+
+  const { isAuthenticated, user, logOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await logOut();
+    } catch (error) {
+      console.error("Error ao fazer logout:", error);
+    }
+  }
 
   return (
     <>
@@ -33,7 +45,9 @@ export const MenuMobile = ({ navLinks }: MenuMobileProps) => {
             <nav className="flex justify-between">
               <Link to="/sign-in" className="flex items-center gap-3">
                 <FaRegUserCircle className="h-6 w-6" />
-                <p>Olá! Faça seu login</p>
+
+                { isAuthenticated ? <p>Olá, {user?.firstName}</p>: <p>Olá! Faça seu login</p>}
+
               </Link>
               <IoMdClose
                 className="cursor-pointer text-2xl"
@@ -63,6 +77,17 @@ export const MenuMobile = ({ navLinks }: MenuMobileProps) => {
                 Sobre
               </Link>
             </li>
+
+            {
+              isAuthenticated && (
+                <li>
+                  <button onClick={handleSignOut} className="cursor-pointer hover:opacity-70 transition-opacity flex item-center gap-2">
+                    Sair
+                    <PiSignOutLight className="w-6 h-6"></PiSignOutLight>
+                  </button>
+                </li>
+              )
+            }
           </ul>
         </div>
       </div>

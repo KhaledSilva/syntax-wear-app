@@ -1,5 +1,4 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { login as authenticate } from "../../services/authService";
 import { AuthContext, type AuthContextType, type RegisterInput, type User } from "./AuthContext";
 
 interface AuthProviderProps {
@@ -18,7 +17,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
             const response = await fetch("http://localhost:3000/auth/profile", {
                 method: "GET",
-                credentials: "include", // faz com que o cookies sejam enviados junto com a requisição
+                credentials: "include",
             });
 
             if (!response.ok) {
@@ -43,7 +42,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   ): Promise<void> {
     const response = await fetch("http://localhost:3000/auth/login", {
       method: "POST",
-      credentials: "include", // faz com que os coookies sejam enviados junto com a requisição
+      credentials: "include", 
       headers: {
         "Content-Type": "application/json",
       },
@@ -60,15 +59,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsAuthenticated(true);
   }
 
-  async function register(data: RegisterInput): Promise<void> {
-    
+  async function register(data: RegisterInput): Promise<void> {}
+
+  async function logOut(): Promise<void> {
+    try {
+      await fetch("http://localhost:3000/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      })
+      setUser(null);
+      setIsAuthenticated(false);
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    }
   }
 
-  function logout(): void {
-    localStorage.removeItem("token");
-    setUser(null);
-    setToken(null);
-    setIsAuthenticated(false)
+  async function signInWithGoogle(credential: string): Promise<void> {
+    const response = await fetch ("http://localhost:3000/auth/google", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ credential }),
+    });
+
+    const result = await response.json();
+
+    console.log("result:", result)
+
+    if (!response.ok || !result.user) {
+      throw new Error(result.message || "Erro ao fazer login com Google");
+    }
+
+    setUser(result.user);
+    setIsAuthenticated(true);
   }
 
   return (
@@ -81,7 +106,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // error,
         login,
         register,
-        logout,
+        logOut,
+        signInWithGoogle,
       }}
     >
       {children}
