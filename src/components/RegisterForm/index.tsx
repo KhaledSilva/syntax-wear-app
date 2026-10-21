@@ -1,10 +1,37 @@
-import { useRegisterForm } from "./register-form.schema";
+import { useNavigate } from "@tanstack/react-router";
+import { useAuth } from "../../contexts/AuthContext/AuthContext";
+import { useRegisterForm, type RegisterFormData } from "./register-form.schema";
+import { useState } from "react";
 
 export const RegisterForm = () => {
-  const { register, errors, isSubmitting } = useRegisterForm();
+  const [error, setError] = useState<string | null>(null)
+  const { register, errors, isSubmitting, handleSubmit } = useRegisterForm();
+
+  const { signUp } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleRegisterUser(data: RegisterFormData) {
+
+    const { confirmPassword, ...dataWithoutConfirmPassword } = data;
+
+    setError(null);
+
+    try {
+      await signUp(dataWithoutConfirmPassword);
+      navigate({ to: "/"});
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Erro ao registar usuário", error.message);
+        setError(error.message);
+      } else {
+        console.error("Erro ao registrar usuário");
+        setError("Erro ao registrar usuário")
+      }
+    }
+  }
 
   return (
-    <form className="text-black">
+    <form className="text-black" onSubmit={handleSubmit(handleRegisterUser)}>
       {/* Campo de e-mail */}
       <div>
         <label className="text-xs text-gray-600">E-mail*</label>
@@ -110,6 +137,9 @@ export const RegisterForm = () => {
       >
         {isSubmitting ? "Enviando..." : "Continuar"}
       </button>
+
+      { error && <p className="text-red-500 text-sm text-center mt-4">{error}</p> }
+
     </form>
   );
 };

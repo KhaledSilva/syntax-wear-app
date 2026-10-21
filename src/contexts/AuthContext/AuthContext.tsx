@@ -21,7 +21,7 @@ export type RegisterInput = Credentials & {
   lastName: string;
   phone: string;
   cpf: string;
-  birthDate: string;
+  birthDate?: string;
 }
 
 export interface AuthContextType {
@@ -31,7 +31,7 @@ export interface AuthContextType {
   // loading: boolean;
   // error: string | null;
   login: (credentials: Credentials) => Promise<void>;
-  register: (data: RegisterInput) => Promise<void>;
+  signUp: (data: RegisterInput) => Promise<void>;
   logOut: () => Promise<void>;
   signInWithGoogle: (credential: string) => Promise<void>
 }

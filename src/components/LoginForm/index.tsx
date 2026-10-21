@@ -67,8 +67,6 @@ export const LoginForm = () => {
         <span className="text-red-500 text-sm">{errors.password.message}</span>
       )}
 
-      { error && <span className="text-red-500 text-sm text-center">{error}</span> }
-
       <button
         className="bg-[#212A2F] w-full p-3.5 rounded-[1px] cursor-pointer text-white disabled:cursor-not-allowed disabled:opacity-60"
         type="submit"
@@ -76,6 +74,8 @@ export const LoginForm = () => {
       >
         {isSubmitting ? "Enviando..." : "Continuar"}
       </button>
+      
+      { error && <span className="text-red-500 text-sm text-center">{error}</span> }
     </form>
   );
 };

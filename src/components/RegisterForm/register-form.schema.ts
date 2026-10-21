@@ -42,7 +42,7 @@ export const registerUserFormSchema = z
         message: "As senhas não coincidem",
     });
 
-export type RegisterSchema = z.infer<typeof registerUserFormSchema>;
+export type RegisterFormData = z.infer<typeof registerUserFormSchema>;
 
 export const useRegisterForm = () => {
   const {
@@ -51,7 +51,7 @@ export const useRegisterForm = () => {
     formState: { errors, isSubmitting },
     setError,
     reset,
-  } = useForm<RegisterSchema>({
+  } = useForm<RegisterFormData>({
     resolver: zodResolver(registerUserFormSchema),
     mode: "onBlur",
     defaultValues: {

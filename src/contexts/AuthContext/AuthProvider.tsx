@@ -59,7 +59,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsAuthenticated(true);
   }
 
-  async function register(data: RegisterInput): Promise<void> {}
+  async function signUp(data: RegisterInput): Promise<void> {
+    const response = await fetch("http://localhost:3000/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.message || "Erro ao cadastrar usuário");
+    }
+      setUser(result.user);
+      setIsAuthenticated(true);
+  }
 
   async function logOut(): Promise<void> {
     try {
@@ -105,7 +121,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // loading,
         // error,
         login,
-        register,
+        signUp,
         logOut,
         signInWithGoogle,
       }}
