@@ -1,3 +1,4 @@
+import { notFound } from "@tanstack/react-router";
 import type { Product } from "../interfaces/product";
 
 const API_BASE_URL = "http://localhost:3000";
@@ -82,6 +83,24 @@ export async function getProductByCategoryId(
     throw new Error(
       `Erro ao buscar produtos por categoria (${response.status}): ${errorMessage}`
     );
+  }
+
+  return await response.json();
+}
+
+export async function getProductDetailById(
+  id: string,
+): Promise<Product | null> {
+  const response = await fetch(
+    `http://localhost:3000/products/${id}`,
+    {
+      method: "GET",
+      credentials: "include",
+    },
+  );
+
+  if (!response.ok) {
+    throw notFound();
   }
 
   return await response.json();

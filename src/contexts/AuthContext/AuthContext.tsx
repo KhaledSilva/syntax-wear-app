@@ -27,9 +27,6 @@ export type RegisterInput = Credentials & {
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  // token: string | null;
-  // loading: boolean;
-  // error: string | null;
   login: (credentials: Credentials) => Promise<void>;
   signUp: (data: RegisterInput) => Promise<void>;
   logOut: () => Promise<void>;
