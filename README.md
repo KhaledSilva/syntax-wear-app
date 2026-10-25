@@ -1,58 +1,87 @@
 # SyntaxWear
 
-SyntaxWear é uma aplicação web de e-commerce voltada ao universo da moda, com foco em uma experiência visual moderna, responsiva e voltada à navegação de produtos. O projeto simula uma loja online com catálogo, categorias, carrinho de compras e páginas institucionais.
+SyntaxWear é uma aplicação web de e-commerce de calçados. O projeto oferece navegação por catálogo e categorias, páginas de produto, carrinho de compras e telas de autenticação, além de páginas institucionais.
 
-## O que o projeto faz
+## Funcionalidades
 
-A aplicação permite:
+- Página inicial com banner, categorias e galeria de imagens.
+- Catálogo de produtos com paginação e listagem por categoria.
+- Página de detalhes do produto com preço, descrição, cálculo de prazo/custo estimado de entrega pelo CEP e opção de adicionar ao carrinho.
+- Carrinho lateral com ajuste de quantidade, remoção de itens e persistência no `localStorage`.
+- Cadastro e login com e-mail e senha, além de autenticação com Google.
+- Encerramento de sessão para usuários autenticados.
+- Páginas institucionais “Sobre” e “Nossas lojas”.
+- Layout responsivo para diferentes tamanhos de tela.
 
-- explorar a página inicial com destaque para marcas e categorias;
-- visualizar produtos por categoria, como masculino, feminino e outlet;
-- navegar por páginas de apresentação, como Sobre e Nossas lojas;
-- adicionar produtos ao carrinho e gerenciar a quantidade;
-- acessar telas de autenticação para login e cadastro.
+> A interface do carrinho inclui o botão “Fechar pedido”, mas a finalização do checkout ainda não está implementada.
 
-## Tecnologias utilizadas
+## Tecnologias
 
-- React 19
-- TypeScript
+- React 19 e TypeScript
 - Vite
 - Tailwind CSS
 - TanStack Router
-- React Hook Form + Zod
+- React Hook Form e Zod
 - React Icons
+- Google OAuth
 
-## Estrutura principal
+## Requisitos
 
-- src/components: componentes reutilizáveis da interface
-- src/pages: páginas e rotas da aplicação
-- src/contexts: estado global do carrinho
-- src/interfaces: tipagens compartilhadas
-- src/mocks: dados simulados para produtos e categorias
-- src/styles: estilos globais
+- Node.js e npm
+- API de backend disponível em `http://localhost:3000` para autenticação, perfil, produtos e categorias
+- Credencial de cliente do Google OAuth para habilitar o login com Google
 
-## Como rodar localmente
+O endereço da API está definido no código. Para autenticação com Google, crie um arquivo `.env` na raiz do projeto e defina:
 
-1. Instale as dependências:
-   ```bash
-   npm install
-   ```
-
-2. Inicie o servidor de desenvolvimento:
-   ```bash
-   npm run dev
-   ```
-
-3. Acesse a aplicação no navegador pelo endereço exibido no terminal.
-
-## Build
-
-Para gerar a build de produção:
-
-```bash
-npm run build
+```env
+VITE_GOOGLE_CLIENT_ID=seu_client_id
 ```
 
-## Observações
+## Como executar
 
-O projeto utiliza armazenamento local para manter o carrinho preservado durante a navegação e foi desenvolvido com foco em uma interface limpa e moderna para comércio eletrônico.
+Instale as dependências:
+
+```bash
+npm install
+```
+
+Inicie o servidor de desenvolvimento:
+
+```bash
+npm run dev
+```
+
+O Vite exibirá no terminal o endereço local da aplicação.
+
+## Scripts
+
+```bash
+npm run dev      # inicia o servidor de desenvolvimento
+npm run build    # verifica os tipos TypeScript e gera a build de produção
+npm run preview  # serve localmente a build de produção
+npm run lint     # executa o Oxlint
+```
+
+## Rotas principais
+
+| Rota | Página |
+| --- | --- |
+| `/` | Página inicial |
+| `/products` | Catálogo |
+| `/products/category/$category` | Produtos de uma categoria |
+| `/products/$productId` | Detalhes de um produto |
+| `/sign-in` | Login |
+| `/sign-up` | Cadastro |
+| `/about` | Sobre a SyntaxWear |
+| `/our-stores` | Nossas lojas |
+
+## Organização do projeto
+
+- `src/components`: componentes reutilizáveis da interface
+- `src/contexts`: estado global de autenticação e carrinho
+- `src/interfaces`: tipos compartilhados
+- `src/mocks`: conteúdo local usado em partes da interface
+- `src/pages`: páginas e rotas
+- `src/services`: comunicação com a API
+- `src/styles`: estilos globais
+- `src/utils`: funções auxiliares
