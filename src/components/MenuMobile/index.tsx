@@ -1,5 +1,5 @@
 import IconMenu from "@/assets/images/icone-menu.png";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { FaRegUserCircle } from "react-icons/fa";
 import type { NavLink } from "../Header";
