@@ -6,12 +6,16 @@ import classicTeeImage from "../../assets/images/checkout-product-classic-tee.sv
 import vintageHoodieImage from "../../assets/images/checkout-product-vintage-hoodie.svg";
 import checkoutDeliveryRadio from "../../assets/images/checkout-delivery-radio.svg";
 import { formatCurrency } from "../../utils/format-currency";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type Resolver } from "react-hook-form";
 import type { Address } from "../../interfaces/address";
+import { CartContext } from "../../contexts/CartContext/CartContext";
+import { useAuth } from "../../contexts/AuthContext/AuthContext";
+import type { ProductCart } from "../../contexts/CartContext/CartProvider";
+import { loadStripe } from "@stripe/stripe-js"
 
 const shippingAddressFormSchema = z.object({
   street: z.string().trim().min(1, { message: "A rua é obrigatória." }),
@@ -23,13 +27,13 @@ const shippingAddressFormSchema = z.object({
     .min(1, { message: "O bairro é obrigatório." }),
   city: z.string().trim().min(1, { message: "A cidade é obrigatória." }),
   state: z.string().trim().min(1, { message: "O estado é obrigatório." }),
-  zipCode: z.string().trim().min(8, { message: "CEP inválido" }),
+  cep: z.string().trim().min(8, { message: "CEP inválido" }),
 });
 
 type ShippingAddressFormData = z.infer<typeof shippingAddressFormSchema>;
 
-async function getCep(zipCode: string) {
-  const response = await fetch(`https://viacep.com.br/ws/${zipCode}/json/`);
+async function getCep(cep: string) {
+  const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
   return await response.json();
 }
 
@@ -40,6 +44,36 @@ const FRETE_POR_REGIAO: Record<string, number> = {
   Sudeste: 14.9,
   Sul: 19.9,
 };
+
+interface OrderItem {
+  productId: number
+  quantity: number
+  size?: string
+}
+
+async function createStripeCheckout(
+  items: OrderItem[],
+  shippingAddress: ShippingAddressFormData,
+  shippingCost: number,
+  paymentMethod: string,
+  userId: number
+) {
+  const response = await fetch("http://localhost:3000/stripe/checkout", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      items,
+      paymentMethod,
+      shippingAddress,
+      shippingCost,
+      userId
+    })
+  })
+
+  return await response.json()
+}
 
 export const Route = createFileRoute("/checkout/")({
   component: CheckoutPage,
@@ -68,6 +102,7 @@ function CheckoutPage() {
     register,
     watch,
     setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<ShippingAddressFormData>({
     resolver: zodResolver(
@@ -80,14 +115,17 @@ function CheckoutPage() {
       neighborhood: "" as any,
       city: "" as any,
       state: "" as any,
-      zipCode: "" as any,
+      cep: "" as any,
     },
     mode: "onBlur",
   });
 
   const [address, setAddress] = useState<Address | null>(null);
 
-  const cepValue = watch("zipCode");
+  const { cart } = useContext(CartContext)
+  const { user } = useAuth()
+
+  const cepValue = watch("cep");
 
   useEffect(() => {
     if (cepValue.length !== 8) return;
@@ -110,6 +148,34 @@ function CheckoutPage() {
 
     fetchData();
   }, [cepValue]);
+
+  const redirectToCheckout = async () => {
+    if (!address) return
+
+    const shippingData = getValues();
+
+    const paymentMethod = "credit_card";
+
+    const items = cart.map((item) => ({
+        productId: item.id,
+        quantity: item.quantity,
+        size: item.sizes[0],
+      }));
+
+    const { sessionId } = await createStripeCheckout(
+      items,
+      shippingData,
+      address?.shippingCost!,
+      paymentMethod,
+      user?.id!
+    )
+
+    if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) return
+
+    const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+
+    stripe?.redirectToCheckout({ sessionId })
+  }
 
   const subtotal = orderItems.reduce(
     (total, item) => total + item.price * item.quantity,
@@ -174,9 +240,9 @@ function CheckoutPage() {
                 <div className="flex items-center gap-3">
                   <input
                     type="text"
-                    placeholder="zipCode"
+                    placeholder="cep"
                     className="w-full max-w-[310px] rounded-md border border-[#E5E7EB] bg-white p-4 text-black placeholder:text-[#9CA3AF]"
-                    {...register("zipCode")}
+                    {...register("cep")}
                   />
 
                   <button
@@ -186,9 +252,9 @@ function CheckoutPage() {
                     Buscar
                   </button>
                 </div>
-                {errors.zipCode && (
+                {errors.cep && (
                   <p className="text-red-500 text-sm mt-1">
-                    {errors.zipCode.message}
+                    {errors.cep.message}
                   </p>
                 )}
               </div>
@@ -366,6 +432,8 @@ function CheckoutPage() {
               <button
                 type="button"
                 className="mt-auto w-full cursor-pointer rounded-md bg-black py-3 text-white"
+                onClick={redirectToCheckout}
+                disabled={!address}
               >
                 Fechar pedido
               </button>

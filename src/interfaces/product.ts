@@ -3,6 +3,7 @@ export interface CartProduct {
     name: string
     price: number
     images: string[]
+    sizes: string[]
 }
 
 export interface Product extends CartProduct {
