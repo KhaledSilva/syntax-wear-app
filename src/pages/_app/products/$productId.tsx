@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useLoaderData } from "@tanstack/react-router";
 import { formatCurrency } from "../../../utils/format-currency";
 import { CartContext } from "../../../contexts/CartContext/CartContext";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { CEPForm } from "../../../components/CEPForm";
 import { getProductDetailById } from "../../../services/productService";
 
@@ -40,15 +40,13 @@ export const Route = createFileRoute("/_app/products/$productId")({
 });
 
 function RouteComponent() {
-  const { addToCart } = useContext(CartContext);
-
+  const { addToCart, isCartLoading } = useContext(CartContext);
   const { product } = useLoaderData({ from: Route.id });
+  const [selectedSize, setSelectedSize] = useState("");
 
-  const originalPrice = product?.price ?? 0;
-
-  const discountPrice = originalPrice * 0.9;
-
-  const inInstallmentsPrice = originalPrice / 6;
+  useEffect(() => {
+    setSelectedSize("");
+  }, [product?.id]);
 
   return (
     <section className="container mb-10 pt-44 md:pt-54 pb-10 mb:px-10">
@@ -77,26 +75,35 @@ function RouteComponent() {
 
           <p className="mb-2">Cor: {product?.color}</p>
 
-          <p className="line-through text-sm text-[#878787]">
-            {formatCurrency(originalPrice)}
-          </p>
-
-          <p className="text-3xl font-bold mb-2">
-            {formatCurrency(discountPrice)} no PIX
-          </p>
-
-          <p className="text-sm text-[#878787]">
-            Você economiza: <span className="font-semibold">10%</span>
-          </p>
-
-          <p className="mb-2">
-            ou <span className="text-[#38373a] font-semibold">6x</span> de{" "}
-            <span className="text-[#38373a] font-semibold">
-              {formatCurrency(inInstallmentsPrice)}
-            </span>
-          </p>
-
           <p className="max-w-[500px] my-5">{product?.description}</p>
+
+          <div className="mb-6">
+            <p className="mb-4 text-2xl font-bold">
+              {product ? formatCurrency(product.price) : "Preço indisponível"}
+            </p>
+            <label htmlFor="product-size" className="mb-2 block text-sm">
+              Tamanho
+            </label>
+            <select
+              id="product-size"
+              value={selectedSize}
+              onChange={(event) => setSelectedSize(event.target.value)}
+              className="w-full rounded-md border border-[#E5E7EB] bg-white p-4"
+              disabled={!product?.sizes.length}
+            >
+              <option value="">Selecione um tamanho</option>
+              {product?.sizes.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+            {!product?.sizes.length && (
+              <p className="mt-1 text-sm text-gray-600">
+                Nenhum tamanho disponível para este produto.
+              </p>
+            )}
+          </div>
 
           <div className="mb-6">
             <p className="text-sm">Calcular o prazo de entrega</p>
@@ -106,9 +113,10 @@ function RouteComponent() {
 
           <button
             className="bg-black text-white rounded-md p-5 w-full cursor-pointer hover:bg-gray-800"
+            disabled={!product || !selectedSize || isCartLoading}
             onClick={() => {
-              if (product) {
-                addToCart(product);
+              if (product && selectedSize) {
+                addToCart(product, selectedSize);
               }
             }}
           >

@@ -1,11 +1,14 @@
 import { createContext } from "react";
 import type { ProductCart } from "./CartProvider";
-import type { CartProduct } from "../../interfaces/product";
+import type { Product } from "../../interfaces/product";
 
 interface CartContextType {
   cart: ProductCart[];
-  addToCart: (product: CartProduct) => void;
-  removeFromCart: (productId: number) => void;
+  isCartLoading: boolean;
+  cartError: string | null;
+  addToCart: (product: Product, size: string) => void;
+  removeFromCart: (productId: number, size?: string) => void;
+  updateCartItemSize: (item: ProductCart, size: string) => void;
   incrementInCart: (product: ProductCart) => void;
   decrementInCart: (product: ProductCart) => void;
 }

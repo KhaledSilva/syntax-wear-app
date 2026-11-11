@@ -2,8 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Logo } from "../../components/Logo";
 import lockIcon from "../../assets/images/lock-icon.png";
 import checkoutInfoIcon from "../../assets/images/checkout-info-icon.svg";
-import classicTeeImage from "../../assets/images/checkout-product-classic-tee.svg";
-import vintageHoodieImage from "../../assets/images/checkout-product-vintage-hoodie.svg";
 import checkoutDeliveryRadio from "../../assets/images/checkout-delivery-radio.svg";
 import { formatCurrency } from "../../utils/format-currency";
 import { useContext, useEffect, useState } from "react";
@@ -14,8 +12,7 @@ import { useForm, type Resolver } from "react-hook-form";
 import type { Address } from "../../interfaces/address";
 import { CartContext } from "../../contexts/CartContext/CartContext";
 import { useAuth } from "../../contexts/AuthContext/AuthContext";
-import type { ProductCart } from "../../contexts/CartContext/CartProvider";
-import { loadStripe } from "@stripe/stripe-js"
+import { loadStripe } from "@stripe/stripe-js";
 
 const shippingAddressFormSchema = z.object({
   street: z.string().trim().min(1, { message: "A rua é obrigatória." }),
@@ -32,6 +29,13 @@ const shippingAddressFormSchema = z.object({
 
 type ShippingAddressFormData = z.infer<typeof shippingAddressFormSchema>;
 
+type CheckoutAddress = Omit<Address, "shippingCost"> & {
+  shippingCost: number | null;
+};
+
+const isValidShippingCost = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value) && value >= 0;
+
 async function getCep(cep: string) {
   const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
   return await response.json();
@@ -39,16 +43,43 @@ async function getCep(cep: string) {
 
 const FRETE_POR_REGIAO: Record<string, number> = {
   Norte: 39.9,
-  Nortedeste: 29.9,
+  Nordeste: 29.9,
   "Centro-Oeste": 24.9,
   Sudeste: 14.9,
   Sul: 19.9,
 };
 
 interface OrderItem {
-  productId: number
-  quantity: number
-  size?: string
+  productId: number;
+  quantity: number;
+  size: string;
+}
+
+function sanitizeCheckoutErrorMessage(
+  message: string,
+  personalData: string[],
+): string {
+  let sanitizedMessage = message;
+
+  for (const value of personalData.sort((a, b) => b.length - a.length)) {
+    if (value.length >= 4) {
+      sanitizedMessage = sanitizedMessage.replaceAll(value, "[dado pessoal removido]");
+    }
+  }
+
+  return sanitizedMessage
+    .replace(/\bBearer\s+[A-Za-z0-9._~+/-]+=*/gi, "Bearer [credencial removida]")
+    .replace(
+      /\b(authorization|cookie|set-cookie|access[_-]?token|refresh[_-]?token|api[_-]?key|secret|password)\b\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;]+)/gi,
+      "$1: [credencial removida]",
+    )
+    .replace(/\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]+\b/gi, "[chave Stripe removida]")
+    .replace(/\b[\w.+-]+@[\w.-]+\.[A-Z]{2,}\b/gi, "[email removido]")
+    .replace(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, "[documento removido]")
+    .replace(/\b\d{5}-?\d{3}\b/g, "[CEP removido]")
+    .replace(/(?<!\d)(?:\+?55\s*)?(?:\(?\d{2}\)?\s*)?9?\d{4}[-\s]?\d{4}(?!\d)/g, "[telefone removido]")
+    .replace(/\b\d{13,19}\b/g, "[número removido]")
+    .trim();
 }
 
 async function createStripeCheckout(
@@ -56,54 +87,93 @@ async function createStripeCheckout(
   shippingAddress: ShippingAddressFormData,
   shippingCost: number,
   paymentMethod: string,
-  userId: number
-) {
-  const response = await fetch("http://localhost:3000/stripe/checkout", {
+  idempotencyKey: string,
+): Promise<string> {
+  if (!isValidShippingCost(shippingCost)) {
+    throw new Error("Não foi possível calcular o frete. Verifique o CEP e tente novamente.");
+  }
+
+  const apiUrl = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, "");
+
+  if (!apiUrl) {
+    throw new Error("A variável VITE_API_URL não está configurada.");
+  }
+
+  const response = await fetch(`${apiUrl}/stripe/checkout/session`, {
     method: "POST",
+    credentials: "include",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey,
     },
     body: JSON.stringify({
       items,
       paymentMethod,
       shippingAddress,
       shippingCost,
-      userId
-    })
-  })
+    }),
+  });
 
-  return await response.json()
+  const responseText = await response.text();
+  let responseBody: unknown;
+
+  if (responseText) {
+    try {
+      responseBody = JSON.parse(responseText);
+    } catch {
+      responseBody = responseText;
+    }
+  }
+
+  if (!response.ok) {
+    const body = responseBody;
+    const backendMessage =
+      typeof body === "object" && body !== null
+        ? "message" in body && typeof body.message === "string"
+          ? body.message
+          : "error" in body && typeof body.error === "string"
+            ? body.error
+            : responseText
+        : typeof body === "string"
+          ? body
+          : responseText;
+    const message = sanitizeCheckoutErrorMessage(
+      backendMessage || response.statusText,
+      Object.values(shippingAddress).map(String),
+    );
+
+    throw new Error(
+      `Falha ao criar checkout (HTTP ${response.status}): ${message}`,
+    );
+  }
+
+  if (typeof responseBody === "string") {
+    throw new Error("A API retornou uma resposta inválida.");
+  }
+
+  const checkoutResponseSchema = z.object({
+    sessionId: z.string().trim().min(1),
+  });
+  const parsedResponse = checkoutResponseSchema.safeParse(responseBody);
+
+  if (!parsedResponse.success) {
+    throw new Error("A API retornou uma resposta de checkout inválida.");
+  }
+
+  return parsedResponse.data.sessionId;
 }
 
 export const Route = createFileRoute("/checkout/")({
   component: CheckoutPage,
 });
 
-const orderItems = [
-  {
-    id: 1,
-    name: "Classic Tee",
-    quantity: 1,
-    price: 29.99,
-    image: classicTeeImage,
-  },
-  {
-    id: 2,
-    name: "Vintage Hoodie",
-    quantity: 1,
-    price: 59.9,
-    image: vintageHoodieImage,
-  },
-];
-
 function CheckoutPage() {
   const {
-    reset,
     register,
     watch,
     setValue,
     getValues,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ShippingAddressFormData>({
     resolver: zodResolver(
       shippingAddressFormSchema,
@@ -120,67 +190,161 @@ function CheckoutPage() {
     mode: "onBlur",
   });
 
-  const [address, setAddress] = useState<Address | null>(null);
+  const [address, setAddress] = useState<CheckoutAddress | null>(null);
 
-  const { cart } = useContext(CartContext)
-  const { user } = useAuth()
+  const {
+    cart,
+    isCartLoading,
+    cartError,
+    updateCartItemSize,
+  } = useContext(CartContext);
+  const { user } = useAuth();
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
 
   const cepValue = watch("cep");
+  const hasIncompleteCartItem = cart.some(
+    (item) =>
+      !item.product ||
+      !item.size ||
+      !item.product.sizes.includes(item.size),
+  );
+  const subtotal =
+    cart.every((item) => item.product !== null)
+      ? cart.reduce(
+          (total, item) =>
+            total + (item.product?.price ?? 0) * item.quantity,
+          0,
+        )
+      : null;
+  const total =
+    subtotal !== null && isValidShippingCost(address?.shippingCost)
+      ? subtotal + address.shippingCost
+      : null;
 
   useEffect(() => {
+    setAddress(null);
+    setCheckoutError(null);
+
     if (cepValue.length !== 8) return;
 
     async function fetchData() {
-      const data = await getCep(cepValue);
+      try {
+        const data = await getCep(cepValue);
 
-      const shippingCost = FRETE_POR_REGIAO[data.regiao];
+        if (data.erro) {
+          throw new Error("CEP não encontrado.");
+        }
 
-      setAddress({
-        ...data,
-        shippingCost,
-      });
+        const shippingCost = FRETE_POR_REGIAO[data.regiao];
+        const validShippingCost = isValidShippingCost(shippingCost)
+          ? shippingCost
+          : null;
 
-      setValue("street", data.logradouro);
-      setValue("neighborhood", data.bairro);
-      setValue("city", data.localidade);
-      setValue("state", data.uf);
+        setAddress({
+          ...data,
+          shippingCost: validShippingCost,
+        });
+
+        if (validShippingCost === null) {
+          setCheckoutError("Não foi possível calcular o frete para esta região.");
+        }
+
+        setValue("street", data.logradouro);
+        setValue("neighborhood", data.bairro);
+        setValue("city", data.localidade);
+        setValue("state", data.uf);
+      } catch {
+        setAddress(null);
+        setCheckoutError("Não foi possível calcular o frete. Verifique o CEP e tente novamente.");
+      }
     }
 
     fetchData();
-  }, [cepValue]);
+  }, [cepValue, setValue]);
 
   const redirectToCheckout = async () => {
-    if (!address) return
+    if (!address || isCreatingCheckout) return;
 
-    const shippingData = getValues();
+    setCheckoutError(null);
+    const shippingCost = address.shippingCost;
 
-    const paymentMethod = "credit_card";
+    if (!isValidShippingCost(shippingCost)) {
+      setCheckoutError("Não foi possível calcular o frete para esta região.");
+      return;
+    }
 
-    const items = cart.map((item) => ({
-        productId: item.id,
+    if (isCartLoading || cart.length === 0) {
+      setCheckoutError(
+        isCartLoading
+          ? "Aguarde a atualização dos produtos do carrinho."
+          : "Adicione produtos ao carrinho antes de finalizar o pedido.",
+      );
+      return;
+    }
+
+    const items: OrderItem[] = [];
+    for (const item of cart) {
+      const size = item.size?.trim();
+      if (!item.product) {
+        setCheckoutError(
+          `O produto #${item.productId} não pôde ser atualizado. Remova-o do carrinho e tente novamente.`,
+        );
+        return;
+      }
+
+      if (!size || !item.product.sizes.includes(size)) {
+        setCheckoutError(
+          `Selecione um tamanho disponível para "${item.product.name}" no carrinho.`,
+        );
+        return;
+      }
+
+      items.push({
+        productId: item.productId,
         quantity: item.quantity,
-        size: item.sizes[0],
-      }));
+        size,
+      });
+    }
 
-    const { sessionId } = await createStripeCheckout(
-      items,
-      shippingData,
-      address?.shippingCost!,
-      paymentMethod,
-      user?.id!
-    )
+    setIsCreatingCheckout(true);
 
-    if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) return
+    try {
+      const shippingData = getValues();
+      const paymentMethod = "credit_card";
+      const sessionId = await createStripeCheckout(
+        items,
+        shippingData,
+        shippingCost,
+        paymentMethod,
+        crypto.randomUUID(),
+      );
 
-    const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+      if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+        throw new Error("A variável VITE_STRIPE_PUBLIC_KEY não está configurada.");
+      }
 
-    stripe?.redirectToCheckout({ sessionId })
-  }
+      const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
-  const subtotal = orderItems.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0,
-  );
+      if (!stripe) {
+        throw new Error("Não foi possível inicializar o Stripe.");
+      }
+
+      const { error } = await stripe.redirectToCheckout({ sessionId });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    } catch (error) {
+      setCheckoutError(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível iniciar o checkout.",
+      );
+    } finally {
+      setIsCreatingCheckout(false);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -204,33 +368,32 @@ function CheckoutPage() {
               </h2>
 
               <div className="space-y-1 text-sm leading-5 text-[#C5C5C5]">
-                <p>robertodias@gmail.com</p>
-                <p>Roberto Dias</p>
+                {user?.email && <p>{user.email}</p>}
+                {(user?.firstName || user?.lastName) && (
+                  <p>{[user.firstName, user.lastName].filter(Boolean).join(" ")}</p>
+                )}
+                {!user && <p>Não foi possível carregar os dados do usuário.</p>}
+                {user && !user.phone && <p>Telefone não informado.</p>}
               </div>
 
-              <div className="relative rounded-md border border-[#E5E7EB]">
-                <div className="flex items-start gap-2 rounded-md bg-[#F5F5F7] p-2">
-                  <img src={checkoutInfoIcon} alt="" />
+              {user?.phone && (
+                <div className="relative rounded-md border border-[#E5E7EB]">
+                  <div className="flex items-start gap-2 rounded-md bg-[#F5F5F7] p-2">
+                    <img src={checkoutInfoIcon} alt="" />
 
-                  <div>
-                    <p className="text-xs leading-4 text-black">
-                      Antes de continuar, verifique se o telefone para contato
-                      está correto.
-                    </p>
+                    <div>
+                      <p className="text-xs leading-4 text-black">
+                        Antes de continuar, verifique se o telefone para contato
+                        está correto.
+                      </p>
 
-                    <p className="text-base leading-6 font-medium text-black">
-                      13 82382378
-                    </p>
+                      <p className="text-base leading-6 font-medium text-black">
+                        {user.phone}
+                      </p>
+                    </div>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  className="absolute right-3 bottom-2 text-sm leading-5 text-[#79B5B3] underline cursor-pointer"
-                >
-                  editar telefone
-                </button>
-              </div>
+              )}
             </div>
 
             <section className="space-y-6 text-black">
@@ -372,7 +535,9 @@ function CheckoutPage() {
                   </label>
 
                   <p className="font-semibold">
-                    {formatCurrency(address.shippingCost)}
+                    {isValidShippingCost(address.shippingCost)
+                      ? formatCurrency(address.shippingCost)
+                      : "Frete indisponível"}
                   </p>
                 </div>
               </section>
@@ -387,45 +552,111 @@ function CheckoutPage() {
                 </h2>
 
                 <ul className="max-h-[220px] divide-y divide-[#E5E7EB] overflow-y-auto">
-                  {orderItems.map((item) => (
+                  {cart.map((item, index) => (
                     <li
-                      key={item.id}
+                      key={`${item.productId}-${item.size ?? "sem-tamanho"}-${index}`}
                       className="flex items-start gap-3 py-4 first:pt-0 last:pb-0"
                     >
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="size-16 shrink-0 bg-[#DDDDDD] object-cover"
-                      />
+                      {item.product?.images[0] && (
+                        <img
+                          src={item.product.images[0]}
+                          alt={item.product.name}
+                          className="size-16 shrink-0 bg-[#DDDDDD] object-cover"
+                        />
+                      )}
 
                       <div className="space-y-1 text-black">
-                        <p>{item.name}</p>
+                        <p>
+                          {item.product?.name ??
+                            `Produto #${item.productId} indisponível`}
+                        </p>
                         <p>Quantidade: {item.quantity}</p>
-                        <p>{formatCurrency(item.price)} à vista</p>
+                        <p>
+                          Unitário:{" "}
+                          {item.product
+                            ? formatCurrency(item.product.price)
+                            : "Preço indisponível"}
+                        </p>
+                        {item.product ? (
+                          <label className="block text-sm">
+                            Tamanho
+                            <select
+                              value={item.size ?? ""}
+                              onChange={(event) =>
+                                updateCartItemSize(item, event.target.value)
+                              }
+                              className="ml-2 rounded border p-1"
+                            >
+                              <option value="">Selecione</option>
+                              {item.size &&
+                                !item.product.sizes.includes(item.size) && (
+                                  <option value={item.size}>
+                                    {item.size} (indisponível)
+                                  </option>
+                                )}
+                              {item.product.sizes.map((size) => (
+                                <option key={size} value={size}>
+                                  {size}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        ) : (
+                          <p>Tamanho: {item.size || "Seleção pendente"}</p>
+                        )}
                       </div>
                     </li>
                   ))}
+                  {!isCartLoading && cart.length === 0 && (
+                    <li className="py-4 text-sm text-gray-600">
+                      Seu carrinho está vazio.
+                    </li>
+                  )}
+                  {isCartLoading && (
+                    <li className="py-4 text-sm text-gray-600">
+                      Atualizando produtos do carrinho...
+                    </li>
+                  )}
                 </ul>
+                {cartError && (
+                  <p role="alert" className="mt-3 text-sm text-red-500">
+                    {cartError}
+                  </p>
+                )}
+                {!isCartLoading && cart.length > 0 && hasIncompleteCartItem && (
+                  <p role="alert" className="mt-3 text-sm text-red-500">
+                    Atualize os produtos indisponíveis e selecione um tamanho
+                    válido para cada item antes de finalizar.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1 py-4 text-black">
-                <div className="flex items-center justify-between text-sm leading-5">
+                <div className="flex items-center justify-between">
                   <span>Subtotal</span>
-                  <span>{formatCurrency(subtotal)}</span>
+                  <span>
+                    {subtotal === null
+                      ? "Aguardando preços dos produtos"
+                      : formatCurrency(subtotal)}
+                  </span>
                 </div>
-
                 <div className="flex items-center justify-between">
                   <span>Frete</span>
                   <span>
                     {address
-                      ? formatCurrency(address.shippingCost)
+                      ? isValidShippingCost(address.shippingCost)
+                        ? formatCurrency(address.shippingCost)
+                        : "Indisponível"
                       : "A calcular"}
                   </span>
                 </div>
-
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between font-semibold">
                   <span>Total</span>
-                  <span>{formatCurrency(subtotal)} à vista</span>
+                  <span>
+                    {total === null
+                      ? "Indisponível"
+                      : formatCurrency(total)}
+                  </span>
                 </div>
               </div>
 
@@ -433,10 +664,22 @@ function CheckoutPage() {
                 type="button"
                 className="mt-auto w-full cursor-pointer rounded-md bg-black py-3 text-white"
                 onClick={redirectToCheckout}
-                disabled={!address}
+                disabled={
+                  !address ||
+                  !isValidShippingCost(address.shippingCost) ||
+                  isCreatingCheckout ||
+                  isCartLoading ||
+                  cart.length === 0 ||
+                  hasIncompleteCartItem
+                }
               >
-                Fechar pedido
+                {isCreatingCheckout ? "Processando..." : "Fechar pedido"}
               </button>
+              {checkoutError && (
+                <p role="alert" className="mt-2 text-sm text-red-500">
+                  {checkoutError}
+                </p>
+              )}
             </div>
           </aside>
         </div>
