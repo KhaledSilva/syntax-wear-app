@@ -18,6 +18,7 @@ import { Route as AppProductsIndexRouteImport } from './pages/_app/products/inde
 import { Route as AppOurStoresIndexRouteImport } from './pages/_app/our-stores/index'
 import { Route as AppAboutIndexRouteImport } from './pages/_app/about/index'
 import { Route as AppProductsProductIdRouteImport } from './pages/_app/products/$productId'
+import { Route as AppAccountOrdersIndexRouteImport } from './pages/_app/account/orders/index'
 import { Route as AppProductsCategoryCategoryRouteImport } from './pages/_app/products/category/$category'
 
 const AppLayoutRoute = AppLayoutRouteImport.update({
@@ -64,6 +65,11 @@ const AppProductsProductIdRoute = AppProductsProductIdRouteImport.update({
   path: '/products/$productId',
   getParentRoute: () => AppLayoutRoute,
 } as any)
+const AppAccountOrdersIndexRoute = AppAccountOrdersIndexRouteImport.update({
+  id: '/account/orders/',
+  path: '/account/orders/',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
 const AppProductsCategoryCategoryRoute =
   AppProductsCategoryCategoryRouteImport.update({
     id: '/products/category/$category',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/our-stores/': typeof AppOurStoresIndexRoute
   '/products/': typeof AppProductsIndexRoute
   '/products/category/$category': typeof AppProductsCategoryCategoryRoute
+  '/account/orders/': typeof AppAccountOrdersIndexRoute
 }
 export interface FileRoutesByTo {
   '/sign-in': typeof AuthSignInRoute
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/our-stores': typeof AppOurStoresIndexRoute
   '/products': typeof AppProductsIndexRoute
   '/products/category/$category': typeof AppProductsCategoryCategoryRoute
+  '/account/orders': typeof AppAccountOrdersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/_app/our-stores/': typeof AppOurStoresIndexRoute
   '/_app/products/': typeof AppProductsIndexRoute
   '/_app/products/category/$category': typeof AppProductsCategoryCategoryRoute
+  '/_app/account/orders/': typeof AppAccountOrdersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/our-stores/'
     | '/products/'
     | '/products/category/$category'
+    | '/account/orders/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/sign-in'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/our-stores'
     | '/products'
     | '/products/category/$category'
+    | '/account/orders'
   id:
     | '__root__'
     | '/_app'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/_app/our-stores/'
     | '/_app/products/'
     | '/_app/products/category/$category'
+    | '/_app/account/orders/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -215,6 +227,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProductsProductIdRouteImport
       parentRoute: typeof AppLayoutRoute
     }
+    '/_app/account/orders/': {
+      id: '/_app/account/orders/'
+      path: '/account/orders'
+      fullPath: '/account/orders/'
+      preLoaderRoute: typeof AppAccountOrdersIndexRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
     '/_app/products/category/$category': {
       id: '/_app/products/category/$category'
       path: '/products/category/$category'
@@ -232,6 +251,7 @@ interface AppLayoutRouteChildren {
   AppOurStoresIndexRoute: typeof AppOurStoresIndexRoute
   AppProductsIndexRoute: typeof AppProductsIndexRoute
   AppProductsCategoryCategoryRoute: typeof AppProductsCategoryCategoryRoute
+  AppAccountOrdersIndexRoute: typeof AppAccountOrdersIndexRoute
 }
 
 const AppLayoutRouteChildren: AppLayoutRouteChildren = {
@@ -241,6 +261,7 @@ const AppLayoutRouteChildren: AppLayoutRouteChildren = {
   AppOurStoresIndexRoute: AppOurStoresIndexRoute,
   AppProductsIndexRoute: AppProductsIndexRoute,
   AppProductsCategoryCategoryRoute: AppProductsCategoryCategoryRoute,
+  AppAccountOrdersIndexRoute: AppAccountOrdersIndexRoute,
 }
 
 const AppLayoutRouteWithChildren = AppLayoutRoute._addFileChildren(
